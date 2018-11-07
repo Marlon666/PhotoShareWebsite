@@ -1,0 +1,38 @@
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+
+{% if albums %}
+<h2>Albums</h2>
+<ul>
+    {% for album in albums %}
+    <li><form method="post" action="/albums">
+      <input type="submit" name="album_search" value="{{album[0]}}"> created: {{album[2]}}
+      <input type="text" name="album_id" value="{{album[1]}}" hidden="true">
+  		</form> <form method="post" action="/album_delete">
+  		  <input type="text" name="album_name" value="{{album[0]}}" hidden = "true">
+  		  <input type="submit" name="album_delete" value="Delete">
+  		</form>
+  	</li>
+    {% endfor %}
+</ul>
+      </form> <ul><li><form method="post" action="/album_delete">
+        <label for = "album"> Delete by Name:</label>
+        <input type="text" name="album_name">
+        <input type="submit" name="album_delete" value="Delete">
+      </form></li></ul>
+{% endif %}
+
+      <ul><li>  <form method="post" action="/add_album">
+                <label for = "album"> Add Album:</label>
+                <input type="text" name="album_title">
+                <input type="submit" name="add" value="Create"><br>
+      </form></li></ul>
+
+
+
+
+
+<a href='/You'>profile</a><br>
+<a href='/'>Home</a><br>
+<a href='/logout'>Logout</a>

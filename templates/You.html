@@ -1,0 +1,50 @@
+<!doctype html>
+
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+<title>Photoshare</title>
+{% if name %}
+  <h1>Hello {{ name }}!</h1>
+{% endif %}
+
+{% if tags %}
+    You may interested:
+    <ul>{% for tag in tags %}
+        <li>{{tag[0]}}</li>
+    {% endfor %}</ul>
+{% endif %}
+
+{% if albums %}
+<h2>albums</h2>
+<ul>
+    {% for album in albums %}
+        <li>{{album[0]}} created: {{album[1]}}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if Avatar %}
+<h2>Picture of You</h2>
+<li><img src='data:image/png;base64, {{Avatar[0][0]}}' style="width:50%; height:50%"/>
+{% else %}
+ <form method="post" enctype="multipart/form-data" action="/uploadAvatar">
+    <label for="photo">You can upload photo as your avatar!</label>
+    <input type="file" name="photo" required='true' /><br />
+    <input type="submit" value="Upload" />
+</form>
+{% endif %}
+
+<ul>
+<li><a href='/albums'>Albums</a></li>  
+<li><a href="/myPhotos">All my photos</a></li>
+<li><a href='/uploading'>Upload photos</a></li> 
+<li><a href='/friends'>Friends</a></li>
+<br>
+<li><a href="/explore">Explore more</a></li>
+<br>
+<li><a href='/'>Home</a></li>
+<li><a href='/logout'>Logout</a></li>
+
+
+</ul>

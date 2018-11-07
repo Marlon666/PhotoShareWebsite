@@ -1,0 +1,38 @@
+<!-- author ben lawson (balawson@bu.edu) -->
+<head>
+
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+    <title>Photo Upload</title>
+<!--
+{% if albums %}
+<h3>Your album list:</h3>
+<ul>
+    {% for album in albums %}
+    <li><form method="post" action="/albums">
+      <input type="submit" name="album_search" value="{{album[0]}}"> created: {{album[2]}}
+    </li>
+    {% endfor %}
+{% endif %}
+-->
+
+</head>
+    <body>
+        <div class="title">
+            <h1>Share Photo with your fans and families</h1>
+        </div>
+            <form method="post" enctype="multipart/form-data" action="/upload">
+                <label for="photo">Select photo:</label>
+                <input type="file" name="photo" required='true' /><br />
+                <label for="caption">Please caption:</label>
+                <input type="text" name="caption" required='true' /><br />
+                <label for="caption">Please add tags (ex:Red Sox):</label>
+                <input type="text" name="tags"/><br />
+                <label for="caption">Add to album:</label>
+                <input type="text" name="album_title" required='true'/><br />
+                <input type="submit" value="Upload" />
+            </form>
+
+            <a href="/">Home</a>
+    </body>
