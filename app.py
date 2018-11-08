@@ -132,6 +132,7 @@ def register_user():
 		lname = request.form.get('lastname')
 		DOB = request.form.get('date')
 		hometown = request.form.get('hometown')
+		gender = request.form.get('gender')
 
 	except:
 		print "couldn't find all tokens" #this prints to shell, end users will not see this (all print statements go to shell)
@@ -145,7 +146,7 @@ def register_user():
 		user = User()
 		user.id = email
 		flask_login.login_user(user)
-		return render_template('hello.html', name=email, message='Account Created!')
+		return render_template('welcome.html', name=email, message='Account Created!')
 	else:
 		print "couldn't find all tokens"
 		return flask.redirect(flask.url_for('register'))
@@ -173,7 +174,7 @@ def isEmailUnique(email):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+	return render_template('welcome.html', name=flask_login.current_user.id, message="click on You to go to your profile")
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML 
@@ -223,24 +224,16 @@ def upload_avatar():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
 		photo_data = base64.standard_b64encode(imgfile.read())
-		caption = getFirstName(uid)
 		cursor = conn.cursor()
-		cursor.execute("INSERT INTO Pictures(imgdata, user_id, caption) VALUES ('{0}', '{1}', '{2}')".format(photo_data,uid, caption))
+		cursor.execute("INSERT INTO UserAvatar(imgdata, user_id) VALUES ('{0}', '{1}')".format(photo_data,uid))
 		conn.commit()
-		picture_id = cursor.lastrowid
-		addAvatar(uid, picture_id)
 		return render_template('You.html', Avatar= showAvatar(uid), message='You looks awesome!!')
 	else:
 		return render_template("You.html")
 
-def addAvatar(uid, picture_id):
-	cursor = conn.cursor()
-	cursor.execute("INSERT INTO UserAvatar(user_id, picture_id) VALUES ('{0}', '{1}')".format(uid, picture_id))
-	conn.commit()
-
 def showAvatar(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT P.imgdata FROM Pictures P, UserAvatar U WHERE P.picture_id = U.picture_id AND U.user_id = '{0}'".format(uid))
+	cursor.execute("SELECT imgdata FROM UserAvatar WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
 def TagPhoto(tags, picture_id):
@@ -377,7 +370,7 @@ def myP():
 	pinfo = []
 	for p in getUserPhotos(uid):
 		pinfo += [getPinfo(p)]
-	return render_template("showPhotos.html", photos=pinfo)
+	return render_template("showPhotos.html", photos=pinfo, user_id=uid)
 
 def getPinfo(p):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
@@ -390,7 +383,7 @@ def getTag(picture_id):
 
 def getComments(picture_id, uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT comment FROM Comment WHERE picture_id = '{0}' AND  user_id = '{1}'".format(picture_id, uid))
+	cursor.execute("SELECT C.comment, U.fname, U.lname FROM Comment C, Users U WHERE C.user_id = U.user_id AND picture_id = '{0}' AND  U.user_id = '{1}' ORDER BY C.DOC".format(picture_id, uid))
 	return cursor.fetchall()
 
 def getLikes(picture_id):
@@ -408,10 +401,156 @@ def getUserPhotos(uid):
 	cursor.execute("SELECT P.imgdata, P.picture_id, P.caption, A.name FROM Pictures P, Album A WHERE P.album_id = A.album_id AND P.user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
+@app.route("/showPhotos",methods=['POST', 'GET'])
+@flask_login.login_required
+def showPhotos():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == 'POST':
+		if request.form.get("comment"):
+			comment = request.form.get("comment")
+			picture_id = request.form.get("picture_id")
+			addComment(comment, uid, picture_id)
+			return render_template("showPhotos.html", photos = allPinfo(), message = "Comment Added Successfully", user_id = uid)
+		elif request.form["photo_delete"]:
+			picture_id = request.form.get("picture_id")
+			print(uid)
+			print(picOwnerID(picture_id)[0][0])
+			if uid == picOwnerID(picture_id)[0][0]:
+				print('it is there')
+				deletePhoto(picture_id)
+				return render_template("showPhotos.html", photos = allPinfo(), message = "Photo Deleted Successdully", user_id = uid)
+			else:
+				print('not')
+				return render_template("showPhotos.html", photos = allPinfo(), message = "You are not Authorized to delete", user_id = uid)
+		else:
+			return render_template("showPhotos.html", photos = allPinfo(), message = "All Photos Here", user_id = uid)
+	else:
+		return render_template("showPhotos.html", photos = allPinfo(), message = "All Photos Here", user_id = uid)
+
+@app.route("/likePhoto",methods=['POST', 'GET'])
+@flask_login.login_required
+def addLike():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	photos = allPinfo()
+	if request.method == 'POST':
+		picture_id = request.form.get("picture_id")
+		if likeValid(uid, picture_id) == False:
+			return render_template("showPhotos.html", photos=photos, message="Already liked bro", user_id = uid)
+		else:
+			likePic(uid, picture_id)
+			photos = allPinfo()
+			return render_template("showPhotos.html", photos=photos, message="You liked one picture, you can find more interesting one by exploring", user_id = uid)
+	else:
+		return render_template("showPhotos.html", photos=photos, message="Something wrong happens here", user_id = uid)
+
+
+def likePic(uid, picture_id):
+	cursor= conn.cursor()
+	cursor.execute("INSERT INTO Likes(user_id, picture_id) VALUES('{0}', '{1}')".format(uid, picture_id))
+	conn.commit()
+
+def likeValid(uid, picture_id):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT user_id FROM Likes WHERE user_id ='{0}' AND picture_id='{1}'".format(uid, picture_id)):
+		return False
+	else:
+		return True
+
+#to get all the photos' information including image itself, picture id, cation and name
+def allPinfo():
+	allPhoto = []
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.imgdata, P.picture_id, P.caption, A.name FROM Pictures P, Album A WHERE P.album_id = A.album_id")
+	photos = cursor.fetchall()
+	for p in photos:
+		allPhoto += [getPinfo(p)]
+	return allPhoto
+
+def addComment(comment, uid, picture_id):
+	DOC = time.strftime("%Y-%m-%d")
+	cursor = conn.cursor()
+	cursor.execute("INSERT INTO Comment(comment, user_id, DOC, picture_id) VALUES ('{0}', '{1}', '{2}', '{3}')".format(comment, uid, DOC, picture_id))
+	conn.commit()
+
+def deletePhoto(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM Likes where picture_id = '{0}'".format(picture_id))
+	conn.commit()
+	cursor.execute("DELETE FROM Comment WHERE picture_id='{0}'".format(picture_id))
+	conn.commit()
+	cursor.execute("DELETE FROM Tag WHERE picture_id='{0}'".format(picture_id))
+	conn.commit()
+	cursor.execute("DELETE FROM Pictures WHERE picture_id='{0}'".format(picture_id))
+	conn.commit()
+
+def picOwnerID(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Pictures WHERE picture_id = '{0}'".format(picture_id))
+	return cursor.fetchall()
+
+#tag search, by input is tag name, it will return all the tags
+@app.route('/tag_search', methods=["POST", "GET"])
+@flask_login.login_required
+def searchTags():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	photos = []
+	if request.method == "POST":
+		if(request.form.get('tag_search')):
+			tags = request.form.get('tag_search').split(" ")
+			for i in getAllTaggedPhotos(tags):
+				photos += [getPinfo(i)]
+		else:
+			tag = request.form['common_tag']
+			for i in getTaggedPhotos(tag):
+				photos += [getPinfo(i)]
+		if photos:
+			return render_template("showPhotos.html", photos=photos, user_id = uid)
+		else:
+			return render_template("tagSearch.html", common=getMostCommonTags(), message="There's no such tag been uploaded before")
+	else:
+		return render_template("tagSearch.html", common=getMostCommonTags())
+
+def getTaggedPhotos(tag):
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.imgdata, P.picture_id, P.caption, A.name FROM Pictures P, Album A, Tag T WHERE T.picture_id = P.picture_id AND P.album_id = A.album_id AND T.Tag = '{0}'".format(tag))
+	return cursor.fetchall()
+
+
+def tagValid(tag):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT * FROM Tags WHERE Tag = '{0}'".format(tag)):
+		return True
+	else:
+		return False
+
+def getTagQuery(tags):
+	query = "SELECT P.imgdata, P.picture_id, P.caption, A.name FROM Pictures P, Album A, Tag T WHERE T.picture_id = P.picture_id AND P.album_id = A.album_id AND T.Tag = '{0}'".format(tags[0])
+	for i in range(1, len(tags)):
+		query += " AND P.picture_id IN (SELECT P.picture_id  FROM Pictures P, Album A, Tag T WHERE T.picture_id = P.picture_id AND P.album_id = A.album_id AND T.Tag = '{0}')".format(tags[i])
+	print(query)
+	return query
+
+
+def getAllTaggedPhotos(tags):
+	cursor = conn.cursor()
+	if len(tags) == 1:
+		return getTaggedPhotos(tags[0])
+	else:
+		pics = getTaggedPhotos(tags[0])
+		for i in pics:
+			cursor.execute(getTagQuery(tags))
+		return cursor.fetchall()
+
+def getMostCommonTags():
+	cursor = conn.cursor()
+	cursor.execute("SELECT Tag, COUNT(Tag) FROM Tag GROUP BY Tag ORDER BY COUNT(Tag) DESC LIMIT 5")
+	return cursor.fetchall()
+
+
 #default page  
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welcome to Photoshare')
+	return render_template('hello.html', message='photoshare.com')
 
 
 if __name__ == "__main__":

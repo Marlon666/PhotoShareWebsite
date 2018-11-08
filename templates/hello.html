@@ -1,7 +1,7 @@
 <!-- author ben lawson (balawson@bu.edu) -->
 <!doctype html>
 {% if message %}
-  <h4>{{message}}!</h4>
+  <h4>{{message}}</h4>
 {% endif %}
 <title>Photoshare</title>
 {% if name %}
@@ -19,20 +19,11 @@
     </ul>
 {% endif %}
 
-{% if message is none %}
-  <p>You should <a href='/login'>login!</a></p>
-{% else %}
-  <p> Go to <a href='/profile'>profile?</a></p>
-{% endif %}
+<h2>Welcome to the photoshare.com, sign up today to explore thousands of photos as your preference!</h2>
 
 <ul>
-<li><a href='/'>Home</a></li>
-<li><a href='/You'>You</a></li>
-<li><a href='/show_all_photos'>View All Photos</a></li>
-<li><a href= '/tag_search'>Search photos</a></li>
-
 <li><a href='/register'>Make an Account</a>
 <li><a href='/login'>Login</a></li>
-<li><a href='/logout'>Logout</a></li>
+<li><a href='/guest'>Just look around?</a></li>
 </ul>
 

@@ -1,0 +1,31 @@
+<!-- author muzi li (marlonli@bu.edu) -->
+<!doctype html>
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+<title>Photoshare</title>
+{% if name %}
+  <h1>Hello {{ name }}!</h1>
+{% endif %}
+
+{% if photos %}
+<h2>click You to go to your profile</h2>
+    <ul>
+    {% for photo in photos %}
+
+        <li>{{photo[2]}}<br>
+        <img src='data:image/png;base64, {{photo[0]}}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if message is none %}
+  <p>You should <a href='/login'>login!</a></p>
+{% endif %}
+
+<ul>
+<li><a href='/You'>You</a></li>
+<li><a href='/showPhotos'>View All Photos</a></li>
+<li><a href= '/tag_search'>Search photos</a></li>
+<li><a href='/logout'>Logout</a></li>
+</ul>

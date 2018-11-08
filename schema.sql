@@ -11,7 +11,7 @@ CREATE TABLE Users(
     lname varchar(20),
     DOB varchar(255),
     hometown varchar(255),
-    gender ENUM('F', 'M'),
+    gender varchar(10),
   CONSTRAINT users_pk PRIMARY KEY (user_id)
 );
 
@@ -35,7 +35,7 @@ CREATE TABLE Album(
 CREATE TABLE Pictures(
   picture_id int4  AUTO_INCREMENT,
   user_id int4,
-  imgdata longblob ,
+  imgdata longblob,
   caption VARCHAR(255),
   INDEX upid_idx (user_id),
   album_id int4,
@@ -69,10 +69,9 @@ CREATE TABLE Likes(
 
 CREATE TABLE UserAvatar(
     user_id int4,
-    picture_id int4,
-    PRIMARY KEY(user_id),
-    FOREIGN KEY(picture_id) REFERENCES Pictures(picture_id)
+    imgdata longblob,
+    PRIMARY KEY(user_id)
 );
 
-INSERT INTO Users (email, password) VALUES ('test@bu.edu', 'test');
+INSERT INTO Users (user_id, email, password) VALUES (-1, 'guest@bu.edu', 'test');
 INSERT INTO Users (email, password) VALUES ('test1@bu.edu', 'test');

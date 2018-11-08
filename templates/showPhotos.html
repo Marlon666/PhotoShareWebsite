@@ -17,7 +17,7 @@
   				<input type="submit" name="common_tag" value="{{i[0]}}">
   				</form> <form method="post" action="/my_tag_search">
   				<input type="text" name="tag_name" value="{{i[0]}}" hidden="true">
-  				<input type="submit" name="my_tag_search" value="Search tag in my photos">
+  				<input type="submit" name="my_tag_search" value="Same tag in my photos">
   				</form></li></ul>
         	{% endfor %}
         <br>Album: {{photo[0][3]}}
@@ -26,23 +26,31 @@
         		<ul><li>{{comment[0]}} commented by: {{comment[1]}} {{comment[2]}}</li></ul> 
         	{% endfor %}
         <br>
-        <form method="post" action="/show_all_photos"> 
+        <form method="post" action="/showPhotos"> 
 			Add Comment: <input type="text" name="comment" >
 			<input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true">
 	    	<input type="submit" value="Add comment" />
 		</form>
-		<form method="post" action="/like_pic">
+		<form method="post" action="/likePhoto">
 			<input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true">
-			<input type="submit" value="Like!">
+			<input type="submit" name="photo_like" value="Like!">
 		</form>
 		Likes: {{photo[3][0][0]}} by 
 		{% for i in photo[4] %}
 			{{i[0]}} {{i[1]}},
 		{% endfor %}
-		<form method="post" action="/show_all_photos"><br>
+    {% if user_id > 0%}
+		<form method="post" action="/showPhotos"><br>
 		<input type="submit" name="photo_delete" value="Delete">
 		<input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true"></li><br></form>
+    {%endif%}
 
     {% endfor %}
 </ul>
+{% else %}
+
+<h4> Hmmmmmm, there's no any photo right now, please come back later
+
 {% endif %}
+
+<li><a href='/profile'>Home</a></li>
