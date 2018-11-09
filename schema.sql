@@ -74,4 +74,3 @@ CREATE TABLE UserAvatar(
 );
 
 INSERT INTO Users (user_id, email, password) VALUES (-1, 'guest@bu.edu', 'test');
-INSERT INTO Users (email, password) VALUES ('test1@bu.edu', 'test');

@@ -1,0 +1,21 @@
+<!doctype html>
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+<title>Photoshare</title>
+
+  <h2>Hello guest, if you want to get all function, please sign up or log in now</h2>
+
+<p>Top User in the Community:</p>
+{% if users %}<ul>
+  {% for user in users %}
+    <li>{{user[0]}} {{user[1]}}</li>
+  {% endfor %}</ul>
+{% endif %}
+
+<ul>
+<li><a href='/register'>Make an Account</a>
+<li><a href='/showPhotos'>View All Photos</a></li>
+<li><a href= '/tag_search'>Search photos</a></li>
+<li><a href="/">Back</a></li>
+</ul>

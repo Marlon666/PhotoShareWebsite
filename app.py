@@ -648,18 +648,18 @@ def getRecommendedTags(tags, uid):
 	cursor.execute(query)
 	return cursor.fetchall()
 
-@app.route("/you_may_also_like")
+@app.route("/explore")
 @flask_login.login_required
 def mayLike():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	photos = []
-	pics = getYouMayAlsoLike(uid)
+	pics = getAlsoLike(uid)
 	for i in pics: 
 		photos += [getPinfo(i)]
 	return render_template("showPhotos.html", message="You may also like", photos=photos, user_id = uid)
 
 
-def getYouMayAlsoLike(uid):
+def getAlsoLike(uid):
 	cursor = conn.cursor()
 	common_tags = getCommonTags(uid)
 	lst = []
@@ -697,6 +697,13 @@ def topUser():
 	cursor.execute("SELECT U.fname, U.lname FROM Users U, (SELECT user_id, SUM(count) as count FROM (SELECT user_id, count(picture_id) AS count FROM Pictures GROUP BY user_id UNION SELECT user_id, count(comment_id) AS count FROM Comment WHERE user_id != -1 GROUP BY user_id ) AS Temp WHERE user_id != -1 GROUP BY user_id) AS user_id_counts WHERE U.user_id = user_id_counts.user_id ORDER BY user_id_counts.count DESC LIMIT 10")
 	#cursor.execute("SELECT fname, lname FROM Users WHERE user_id != -1")
 	return cursor.fetchall()
+
+@app.route("/guest", methods=['GET'])
+def guestVisiting():
+	user = User()
+	user.id = "guest@bu.edu"
+	flask_login.login_user(user)
+	return render_template('guest.html', name=flask_login.current_user.id, message="Welcome!", users = topUser())
 
 #default page  
 @app.route("/", methods=['GET'])
