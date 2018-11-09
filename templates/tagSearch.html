@@ -6,17 +6,16 @@
   <h4>{{message}}!</h4>
 {% endif %}
 {% if common %}
-	Most Common Tags:
+	Hot in trend:
 	{% for word in common %}
-  		<li><form method="post" action="/tag_search">
-  		<input type="submit" name="common_tag" value="{{word[0]}}"></form></li>
+  		<form method="post" action="/tag_search">
+  		<input type="submit" name="common_tag" value="{{word[0]}}"></form>
 	{% endfor %}
 {% endif %}
 
 <ul>
 	<form method="post" action="/tag_search">
-		<label for="search">Search for Photos!</label><br>
-		Tags (separated by space only): 
+		<label for="search">Looking for other tags?</label><br>
 		<input type="search" name="tag_search"><br>
 	    <input type="submit" value="Search" />
 	</form>

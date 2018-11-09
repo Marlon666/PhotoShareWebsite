@@ -25,7 +25,7 @@
 {% endif %}
 
 {% if Avatar %}
-<h2>Picture of You</h2>
+<h3>Avatar:</h3>
 <li><img src='data:image/png;base64, {{Avatar[0][0]}}' style="width:50%; height:50%"/>
 {% else %}
  <form method="post" enctype="multipart/form-data" action="/uploadAvatar">
@@ -40,9 +40,7 @@
 <li><a href="/myPhotos">All my photos</a></li>
 <li><a href='/uploading'>Upload photos</a></li> 
 <li><a href='/friends'>Friends</a></li>
-<br>
-<li><a href="/explore">Explore more</a></li>
-<br>
+<li><a href="/you_may_also_like">Explore more</a></li>
 <li><a href='/profile'>Home</a></li>
 <li><a href='/logout'>Logout</a></li>
 

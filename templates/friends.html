@@ -1,4 +1,4 @@
-<!-- author Muzi Li (marlonli@bu.edu) -->
+<!-- author muzi li (marlonli@bu.edu) -->
 <!doctype html>
 {% if message %}
   <h4>{{message}}!</h4>
@@ -6,7 +6,7 @@
 
 
 {% if friends %}
-<h2>Friends:</h2>
+<h2>Friends of me:</h2>
 <ul>
     {% for friend in friends %}
         <li>{{friend[0][0]}} {{friend[0][1]}}</li>
@@ -32,5 +32,11 @@
 	</form>
 </ul>
 
-<a href='/add_friends'>Want to add by email?</a><br>
-<a href='/'>Go home</a>
+<ul>
+    <form method="post" action="/add_friends">
+        <label for="search">Add Friends by email!</label><br>
+        email: <input type="search" name="search_email"><br>
+        <input type="submit" value="Search" />
+    </form>
+</ul>
+<a href='/You'>Back to profile</a>

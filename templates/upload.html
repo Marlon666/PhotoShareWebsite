@@ -5,7 +5,7 @@
   <h4>{{message}}!</h4>
 {% endif %}
     <title>Photo Upload</title>
-<!--
+
 {% if albums %}
 <h3>Your album list:</h3>
 <ul>
@@ -15,7 +15,7 @@
     </li>
     {% endfor %}
 {% endif %}
--->
+
 
 </head>
     <body>
@@ -33,6 +33,21 @@
                 <input type="text" name="album_title" required='true'/><br />
                 <input type="submit" value="Upload" />
             </form>
+            <br>
 
-            <a href="/">Home</a>
+            <li>
+                <h4>Don't know how to tag your photo? Try just type in something already in your mind</h4>
+                    <form method="post" action="/recommend_tags">
+                        <input type="text" name="recommend_tags"><br>
+                        <br><input type="submit" value="I'm feeling lucky" />
+                    </form>
+            </li>
+
+            {% if tags %}
+                Tags recommended for you:
+                <ul>{% for tag in tags %}
+                <li>{{tag[0]}}</li>
+                {% endfor %}</ul>
+            {% endif %}
+
     </body>

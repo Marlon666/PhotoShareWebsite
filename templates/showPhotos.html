@@ -6,39 +6,40 @@
   <h4>{{album_title}}!</h4>
 {% endif %}
 
-{% if photos %}
+{% if photos != 0 %}
 <ul>
     {% for photo in photos %}
-        <li><img src='data:image/png;base64, {{photo[0][0]}}' style="width:50%; height:50%"/>
+        <img src='data:image/png;base64, {{photo[0][0]}}' style="width:50%; height:50%"/>
         <br>Caption: {{photo[0][2]}}
-        <br>Tags: 
+        <br>Album: {{photo[0][3]}}<br>
+
+    <form method="post" action="/likePhoto">
+      <input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true">
+      <input type="submit" name="photo_like" value="Like!">
+    </form>
+    Likes: {{photo[3][0][0]}} by 
+    {% for i in photo[4] %}
+      {{i[0]}} {{i[1]}},
+    {% endfor %}
+        <br>Comments:
+          {% for comment in photo[2] %}
+            <ul><li>{{comment[0]}} commented by: {{comment[1]}} {{comment[2]}}</li></ul> 
+          {% endfor %}
+        <br>
+        <form method="post" action="/showPhotos"> 
+      Add Comment: <input type="text" name="comment" >
+      <input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true">
+        <input type="submit" value="Add comment" />
+    </form>
+        Tags: 
         	{% for i in photo[1] %}
-				<ul><li><form method="post" action="/tag_search">
+				<ul><form method="post" action="/tag_search">
   				<input type="submit" name="common_tag" value="{{i[0]}}">
   				</form> <form method="post" action="/my_tag_search">
   				<input type="text" name="tag_name" value="{{i[0]}}" hidden="true">
   				<input type="submit" name="my_tag_search" value="Same tag in my photos">
-  				</form></li></ul>
+  				</form></ul>
         	{% endfor %}
-        <br>Album: {{photo[0][3]}}
-        <br>Comments:
-        	{% for comment in photo[2] %}
-        		<ul><li>{{comment[0]}} commented by: {{comment[1]}} {{comment[2]}}</li></ul> 
-        	{% endfor %}
-        <br>
-        <form method="post" action="/showPhotos"> 
-			Add Comment: <input type="text" name="comment" >
-			<input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true">
-	    	<input type="submit" value="Add comment" />
-		</form>
-		<form method="post" action="/likePhoto">
-			<input type="text" name="picture_id" value="{{photo[0][1]}}" hidden="true">
-			<input type="submit" name="photo_like" value="Like!">
-		</form>
-		Likes: {{photo[3][0][0]}} by 
-		{% for i in photo[4] %}
-			{{i[0]}} {{i[1]}},
-		{% endfor %}
     {% if user_id > 0%}
 		<form method="post" action="/showPhotos"><br>
 		<input type="submit" name="photo_delete" value="Delete">

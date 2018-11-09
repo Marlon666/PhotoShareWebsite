@@ -130,7 +130,7 @@ def register_user():
 		password=request.form.get('password')
 		fname = request.form.get('firstname')
 		lname = request.form.get('lastname')
-		DOB = request.form.get('date')
+		DOB = request.form.get('birthday')
 		hometown = request.form.get('hometown')
 		gender = request.form.get('gender')
 
@@ -140,7 +140,7 @@ def register_user():
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print cursor.execute("INSERT INTO Users (email, password, fname, lname, DOB, hometown) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')".format(email, password, fname, lname, DOB, hometown))
+		print cursor.execute("INSERT INTO Users (email, password, fname, lname, DOB, hometown, gender) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(email, password, fname, lname, DOB, hometown, gender))
 		conn.commit()
 		#log user in
 		user = User()
@@ -174,7 +174,7 @@ def isEmailUnique(email):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('welcome.html', name=flask_login.current_user.id, message="click on You to go to your profile")
+	return render_template('welcome.html', name=flask_login.current_user.id, message="Welcome!", users = topUser())
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML 
@@ -200,15 +200,15 @@ def upload_file():
 		photo_data = base64.standard_b64encode(imgfile.read())
 		tags = str(request.form.get('tags')).split(' ')
 		album_title = request.form.get('album_title')
-		album_id = getAlbumsID(album_title, uid)
 		cursor = conn.cursor()
 		if CheckAlbumUnique(album_title, uid) == False:
+			album_id = getAlbumsID(album_title, uid)
 			cursor.execute("INSERT INTO Pictures (imgdata, user_id, caption, album_id) VALUES ('{0}', '{1}', '{2}', '{3}' )".format(photo_data,uid, caption, album_id))
 			conn.commit()
 			picture_id = cursor.lastrowid
 			print(picture_id)
 			TagPhoto(tags, picture_id)
-			return render_template('You.html', name=getFirstName(uid), message='upload successfully')
+			return render_template('You.html', name=getFirstName(uid),Avatar= showAvatar(uid), message='upload successfully')
 		else:
 			return render_template('upload.html', message='Not a valid album')
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid) )
@@ -246,6 +246,11 @@ def TagPhoto(tags, picture_id):
 def getFirstName(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT fname FROM Users WHERE user_id ='{0}'".format(uid))
+	return cursor.fetchall()[0][0]
+
+def getLastName(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT lname FROM Users WHERE user_id ='{0}'".format(uid))
 	return cursor.fetchall()[0][0]
 
 @app.route('/albums', methods=['GET', 'POST'])
@@ -303,8 +308,8 @@ def deleteAlbum():
 		if(album_id == 0):
 			return render_template("albums.html", albums=showAlbums(uid), message="You have no album under such name")
 		cursor = conn.cursor()
-		#pix = getAlbumPhotos(album_id, uid)
-		#for pic in pix:
+		#pictures = getAlbumPhotos(album_id, uid)
+		#for pic in pictures:
 		#	deletePhoto(pic[1])
 		cursor.execute("DELETE FROM Album WHERE album_id='{0}'".format(album_id))
 		conn.commit()
@@ -317,36 +322,6 @@ def getAlbumsID(album_name, uid):
 	cursor.execute("SELECT album_id FROM Album WHERE name='{0}' AND user_id='{1}'".format(album_name, uid))
 	return cursor.fetchall()[0][0]
 
-@app.route('/friends', methods=['GET', 'POST'])
-@flask_login.login_required
-def friends():
-	uid = getUserIdFromEmail(flask_login.current_user.id)
-	friends = getUsersFriends(uid)
-	friends_names = []
-	for i in friends:
-		friends_names += [getUserName(i)]
-	if request.method == 'POST':
-		first_name = request.form.get('search_first_name')
-		last_name = request.form.get('search_last_name')
-		if searchUsers(first_name, last_name):
-			return render_template('friends.html', friends=friends_names, users_search=searchUsers(first_name,last_name))
-		else:
-			return render_template('friends.html', friends=friends_names, message="No users with that name")
-	else:
-		return render_template('friends.html', friends=friends_names)
-
-def searchUser(first_name, last_name):
-	cursor = conn.cursor()
-	first_name=str(first_name)
-	last_name=str(last_name)
-	if first_name != '' and (last_name == ''):
-		cursor.execute("SELECT fname, lname, DOB, email, user_id FROM Users WHERE fname ='{0}'".format(first_name))
-	elif last_name != '' and (first_name == ''):
-		cursor.execute("SELECT fname, lname, DOB, email, user_id FROM Users WHERE lname ='{0}'".format(last_name))
-	else:
-		cursor.execute("SELECT fname, lname, DOB, email, user_id FROM Users WHERE fname = '{0}' AND lname ='{1}'".format(first_name, last_name))
-	return cursor.fetchall()
-
 @app.route('/You')
 @flask_login.login_required
 def profile():
@@ -357,11 +332,6 @@ def profile():
 	else:
 		print("no av")
 		return render_template('You.html', name=getFirstName(uid), message="Wanna some fresh today?")
-
-def getFirstName(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT fname FROM Users WHERE user_id = '{0}'".format(uid))
-	return cursor.fetchall()[0][0]
 
 @app.route("/myPhotos")
 @flask_login.login_required
@@ -383,7 +353,7 @@ def getTag(picture_id):
 
 def getComments(picture_id, uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT C.comment, U.fname, U.lname FROM Comment C, Users U WHERE C.user_id = U.user_id AND picture_id = '{0}' AND  U.user_id = '{1}' ORDER BY C.DOC".format(picture_id, uid))
+	cursor.execute("SELECT C.comment, U.fname, U.lname FROM Comment C, Users U WHERE C.user_id = U.user_id AND picture_id = '{0}' ORDER BY C.DOC".format(picture_id))
 	return cursor.fetchall()
 
 def getLikes(picture_id):
@@ -530,7 +500,6 @@ def getTagQuery(tags):
 	print(query)
 	return query
 
-
 def getAllTaggedPhotos(tags):
 	cursor = conn.cursor()
 	if len(tags) == 1:
@@ -546,11 +515,193 @@ def getMostCommonTags():
 	cursor.execute("SELECT Tag, COUNT(Tag) FROM Tag GROUP BY Tag ORDER BY COUNT(Tag) DESC LIMIT 5")
 	return cursor.fetchall()
 
+@app.route('/my_tag_search', methods=["POST", "GET"])
+@flask_login.login_required
+def searchMyTags():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	#if it's guest, he can not do search in my tags
+	if uid == -1:
+		return render_template("showPhotos.html", photos = allPinfo(), message = "Please sign in first to use such functionality", user_id = uid)
+	photos = []
+	pictures = []
+	for i in getUsersPhotos(uid):
+		pictures += [getPinfo(i)]
+	if request.method == "POST":
+		tag = request.form.get('tag_name')
+		for i in getUserTaggedPhotos(tag, uid):
+			photos += [getPinfo(i)]
+		if photos:
+			return render_template("showPhotos.html", photos=photos, user_id = uid)
+		else:
+			return render_template("showPhotos.html", message="no such tag in your repository", user_id = uid)
+	else:
+		return render_template("showPhotos.html", photos=pictures, user_id = uid)
+
+
+def getUserTaggedPhotos(tag, uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.imgdata, P.picture_id, P.caption, A.name FROM Pictures P, Album A, Tag T WHERE T.picture_id = P.picture_id AND P.album_id = A.album_id AND T.Tag = '{0}' AND P.user_id ='{1}'".format(tag, uid))
+	return cursor.fetchall()
+
+#deal with friends and adding issue
+def getFriendList(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id2 FROM Friendship WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall()
+
+def searchUsers(fname='', lname=''):
+	cursor = conn.cursor()
+	fname=str(fname)
+	lname=str(lname)
+	if fname != '' and (lname == ''):
+		cursor.execute("SELECT fname, lname, dob, email, user_id FROM Users WHERE fname ='{0}'".format(fname))
+	elif lname != '' and (fname == ''):
+		cursor.execute("SELECT fname, lname, dob, email, user_id FROM Users WHERE lname ='{0}'".format(lname))
+	else:
+		cursor.execute("SELECT fname, lname, dob, email, user_id FROM Users WHERE fname = '{0}' AND lname ='{1}'".format(fname, lname))
+	return cursor.fetchall()
+
+@app.route('/friends', methods = ['GET', 'POST'])
+@flask_login.login_required
+def friends():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	friends = getFriendList(uid)
+	friends_names = []
+	for i in friends:
+		UserName = getUserName(i)
+		friends_names += [UserName]
+	if request.method == 'POST':
+		first_name = request.form.get('search_first_name')
+		last_name = request.form.get('search_last_name')
+		if searchUsers(first_name, last_name):
+			return render_template('friends.html', friends=friends_names, users_search=searchUsers(first_name,last_name))
+		else:
+			return render_template('friends.html', friends=friends_names, message="Can not find user with this name")
+	else:
+		print('it is here')
+		return render_template('friends.html', friends=friends_names)
+
+def addFriend(user_id2):
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	if cursor.execute("SELECT user_id FROM Users WHERE user_id='{0}'".format(user_id2)):
+		cursor.execute("INSERT INTO Friendship(user_id, user_id2) VALUES ('{0}', '{1}')".format(uid, user_id2))
+		conn.commit()
+		return True
+	else:
+		return False
+
+@app.route('/add_friends', methods=['GET','POST'])
+@flask_login.login_required
+def friendsAdd():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	friends_names = []
+	if request.method == 'POST':
+		email = request.form.get('search_email')
+		friend_uid = getUserIdFromEmail(email)
+		if uid == friend_uid:
+			friends = getFriendList(uid)
+			for i in friends:
+				friends_names += [getUserName(i)]
+			return render_template('friends.html', friends=friends_names, message="You can not add yourself as friend! Please try other choice")
+		if addFriend(friend_uid) == True:
+			friends = getFriendList(uid)
+			for i in friends:
+				friends_names += [getUserName(i)]
+			return render_template('friends.html', friends=friends_names, message="Friend Added!")
+		else:
+			friends = getFriendList(uid)
+			for i in friends:
+				friends_names += [getUserName(i)]
+			return render_template('friends.html', friends=friends_names, message="Please pick a valid email")
+	else:
+		return render_template('add_friends.html')
+
+def getUserName(uid):
+	uid = uid[0]
+	cursor = conn.cursor()
+	cursor.execute("SELECT fname, lname FROM Users where user_id = '{0}'".format(uid))
+	return cursor.fetchall()
+
+@app.route("/recommend_tags", methods=["GET", "POST"])
+@flask_login.login_required
+def recommend():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	if request.method == "POST":
+		tags = request.form.get("recommend_tags").split(" ")
+		recommended_tags = getRecommendedTags(tags, uid)
+		return render_template("upload.html", tags=recommended_tags)
+	else:
+		return render_template("upload.html", message="hmmm, you have a unique thought, no other tagged something similar before")
+
+
+def getRecommendedTags(tags, uid):
+	cursor = conn.cursor()
+	query = "SELECT T.Tag, Count(T.Tag) as tcount FROM Tag T, ("
+	for i in tags:
+		query += "SELECT P.picture_id, T.Tag FROM Pictures P, Album A, Tag T WHERE T.picture_id = P.picture_id AND P.album_id = A.album_id AND T.Tag = '{0}'".format(i)
+		query += " UNION "
+	query = query[:-7] +  ") as ReTag WHERE ReTag.picture_id = T.picture_id"
+	for i in tags:
+		query += " AND T.Tag != '{0}'".format(i)
+	query += "GROUP BY T.Tag ORDER BY tcount DESC"
+	cursor.execute(query)
+	return cursor.fetchall()
+
+@app.route("/you_may_also_like")
+@flask_login.login_required
+def mayLike():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	photos = []
+	pics = getYouMayAlsoLike(uid)
+	for i in pics: 
+		photos += [getPinfo(i)]
+	return render_template("showPhotos.html", message="You may also like", photos=photos, user_id = uid)
+
+
+def getYouMayAlsoLike(uid):
+	cursor = conn.cursor()
+	common_tags = getCommonTags(uid)
+	lst = []
+	for i in common_tags:
+		lst += [i[0]]
+	pics = commonTagsPhoto(lst, uid)
+	return pics
+
+def getCommonTags(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT T.Tag, Count(T.picture_id) FROM Tag T, Pictures P WHERE P.picture_id = T.picture_id AND P.user_id = '{0}' GROUP BY Tag ORDER BY Count(T.picture_id) DESC LIMIT 5".format(uid))
+	return cursor.fetchall()
+
+def commonTagsPhoto(tags, uid):
+	cursor = conn.cursor()
+	query = "SELECT CTags.picture_id, Count(CTags.picture_id) as Pcount FROM ("
+	for i in tags:
+		query += "SELECT P.picture_id, T.Tag, P.user_id FROM Pictures P, Tag T WHERE T.picture_id = P.picture_id AND T.Tag = '{0}'".format(i)
+		query += " UNION "
+	query = query[:-7] +  ") as CTags WHERE CTags.user_id != '{0}' GROUP BY CTags.picture_id ORDER BY Pcount DESC".format(uid)
+	cursor.execute(query)
+	suggested_photos_id = cursor.fetchall()
+	suggested_photos = []
+	for i in suggested_photos_id:
+		suggested_photos += getPicfromID(i[0])
+	return suggested_photos
+
+def getPicfromID(picture_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.imgdata, P.picture_id, P.caption, A.name FROM Pictures P, Album A WHERE P.album_id = A.album_id and P.picture_id = '{0}'".format(picture_id))
+	return cursor.fetchall()
+
+def topUser():
+	cursor = conn.cursor()
+	cursor.execute("SELECT U.fname, U.lname FROM Users U, (SELECT user_id, SUM(count) as count FROM (SELECT user_id, count(picture_id) AS count FROM Pictures GROUP BY user_id UNION SELECT user_id, count(comment_id) AS count FROM Comment WHERE user_id != -1 GROUP BY user_id ) AS Temp WHERE user_id != -1 GROUP BY user_id) AS user_id_counts WHERE U.user_id = user_id_counts.user_id ORDER BY user_id_counts.count DESC LIMIT 10")
+	#cursor.execute("SELECT fname, lname FROM Users WHERE user_id != -1")
+	return cursor.fetchall()
 
 #default page  
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='photoshare.com')
+	return render_template('hello.html', message='photoshare.com', users = topUser())
 
 
 if __name__ == "__main__":
